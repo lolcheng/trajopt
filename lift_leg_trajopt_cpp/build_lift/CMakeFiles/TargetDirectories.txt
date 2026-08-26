@@ -1,0 +1,3 @@
+/home/yizhe/trajopt/lift_leg_trajopt_cpp/build_lift/CMakeFiles/lift_leg_trajopt_cpp.dir
+/home/yizhe/trajopt/lift_leg_trajopt_cpp/build_lift/CMakeFiles/edit_cache.dir
+/home/yizhe/trajopt/lift_leg_trajopt_cpp/build_lift/CMakeFiles/rebuild_cache.dir

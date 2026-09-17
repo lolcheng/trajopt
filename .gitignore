@@ -1,3 +1,14 @@
 result
 terrain_res
 test/terrain_res
+
+build
+core/__pycache__
+lift_leg_trajopt_cpp/build
+lift_leg_trajopt_cpp/build_lift
+lift_leg_trajopt_cpp/build_lift_new
+seg_trajopt_cpp/build
+terrain_friction_segment/build
+trajopt_cpp/build
+trajopt_cpp/__pycache__
+utils/__pycache__

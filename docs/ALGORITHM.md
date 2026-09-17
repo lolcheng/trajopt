@@ -271,12 +271,10 @@ seg 的 wheel z 由地形高度计算；lift 的距离约束使用显式分段 w
 |---|---|
 | WheelAirborne | 通用版硬约束 \(-0.05\le z_w-f(x_w,y_w)\le0.15\) m。允许 5 cm 穿透和 15 cm 离地。 |
 | NormalForceUpperBound | 通用版硬约束 \(f_w\cdot\hat n_w\le m(g+a_{max})=10.81\) N；没有法向力下界。 |
-| RollableRegion | seg 在分区文件成功加载时启用。对 base 和两轮的双线性插值标签 \(S(x,y)\)，约束 `threshold-S <= buffer`，即 \(S\ge threshold-buffer\)。当前二者均为 `0.1`，实际为 \(S\ge0\)，对 `[0,1]` 标签不排除 lift 区。lift 目录虽有同名源码文件，但当前 CMake/入口未编译、未注册。 |
+| RollableRegion | seg 在分区文件成功加载时启用。对 base 和两轮的双线性插值标签 \(S(x,y)\)，约束 `threshold-S <= buffer`，即 \(S\ge threshold-buffer\)。当前二者均为 `0.1`，实际为 \(S\ge0\)，对 `[0,1]` 标签不排除 lift 区。 |
 | Terrain penetration | lift：\(f(x_w,y_w)-z_w\le0.01\) m，无下界，故抬高不受该约束限制。 |
 | Penetration-based force | lift 定义近似力 \(F_w=5000P_\epsilon(f-z_w)\)，\(P_\epsilon(d)=\tfrac12(d+\sqrt{d^2+10^{-6}})\)。contact mask 为 1 时 `5 <= F <= 700 N`；为 0 时 `F <= 8 N` 且无有效下界。它是硬约束在“估算力”上的应用，但该力不是决策变量。 |
 | Piecewise z continuity | lift 且 `Nz>1` 时：相邻段端点差 \(|z_{w,j}(1)-z_{w,j+1}(0)|\le0.005\) m；仅 C0。 |
-
-`lift_leg_trajopt_cpp/include/constraints/boundary_constraint_8var.hpp`、`rollable_region_constraint.hpp` 及对应 `.cpp` 当前存在，但不在 lift CMake source list 中，属于目前未使用代码。
 
 # 10. Contact and Force Model
 
@@ -488,4 +486,3 @@ for every segment in route:
 | \(K_c\) | 接触刚度 | N/m | full `500`; lift approximation `5000` |
 | \([a]_+\) | positive part `max(0,a)` | follows a | full penalties |
 | \(P_\epsilon(a)\) | smooth positive approximation | follows a | lift force, `epsilon=1e-6` |
-

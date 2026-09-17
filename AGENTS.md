@@ -180,11 +180,10 @@ python terrain_friction_segment/scripts/visualize_terrain_segmentation.py \
 1. `.git/` 及任何 Git 内部文件；
 2. `**/build*/`、`**/__pycache__/` 和其中的 CMake 缓存、目标文件、依赖文件、二进制及字节码；
 3. `*.o`、`*.d`、`*.cubin`、`*.pyc`、已编译可执行文件；
-4. `trajopt_cpp/external/matplotlibcpp.h`；
-5. `terrain_friction_segment/external/stb_image_write.h`；
-6. `ipopt_log.txt`、`presentation.log`、`result` 以及现有 `*_out*`、`seg_out`、实验图片和调试 CSV；
-7. 用户未明确要求更新时的 `test/terrain_res/` 测试夹具及其中的 RBF、分区、路径和 waypoint 数据。
-8. 根目录 `RBF_LIO.pdf`；它是理论参考原件，不得编辑、覆盖、压缩或重新导出。
+4. `terrain_friction_segment/external/stb_image_write.h`；
+5. `ipopt_log.txt`、`presentation.log`、`result` 以及现有 `*_out*`、`seg_out`、实验图片和调试 CSV；
+6. 用户未明确要求更新时的 `test/terrain_res/` 测试夹具及其中的 RBF、分区、路径和 waypoint 数据。
+7. 根目录 `RBF_LIO.pdf`；它是理论参考原件，不得编辑、覆盖、压缩或重新导出。
 
 需要验证输出时，应写入新建的临时构建/结果目录，不得覆盖现有实验结果。不要使用清理命令批量删除仓库中的历史构建或输出目录。
 

@@ -7,7 +7,7 @@
 
 /**
  * RBF地形可视化类
- * 使用matplotlibcpp进行可视化
+ * 将地形网格写入临时文件，并调用 Python 脚本进行可视化
  */
 class TerrainVisualizer {
 public:
@@ -44,4 +44,3 @@ public:
 };
 
 #endif // TERRAIN_VISUALIZER_HPP
-

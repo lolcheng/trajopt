@@ -318,7 +318,7 @@ sequenceDiagram
 | CasADi | `solve_casadi.py`、`trajopt_sdf.py`、`solver/casadi_ipopt.py`、CasADi smoke test | Python NLP 建模及 Ipopt 接口。 |
 | CuPy | `test/cupy_test.py` | GPU 数值性能实验；不参与 C++ 主数据链。 |
 
-`terrain_friction_segment` 还内置 `stb_image_write.h`，`trajopt_cpp` 内置 `matplotlibcpp.h`。工程没有统一依赖锁文件，也没有根目录级 CMake 配置。
+`terrain_friction_segment` 还内置 `stb_image_write.h` 用于 PNG 输出。工程没有统一依赖锁文件，也没有根目录级 CMake 配置。
 
 # 12. Extension Points
 

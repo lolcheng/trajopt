@@ -1,0 +1,272 @@
+trajopt/
+├── main.py                                   # Python 模块化层的变量打包/解包演示，不是完整求解入口
+├── solve_casadi.py                           # 单文件 CasADi Opti 原型；RBF + Chebyshev 轨迹 + Ipopt
+├── trajopt_sdf.py                            # 显式轮高和接触力的 CasADi 轨迹优化原型
+├── ipopt_log.txt                             # 历史 Ipopt 控制台日志，未绑定当前构建与参数
+├── result                                    # 旧机器路径占位文本，不是可用结果目录或符号链接
+├── constraints/                              # 模块化 Python 原型的约束函数
+│   ├── clearance.py                          # 轮/地间隙不等式约束
+│   └── track_width.py                        # 左右轮距等式及防交叉不等式约束
+├── core/                                     # 模块化 Python 原型的变量与目标函数抽象
+│   ├── variable.py                           # VarBlock/Variables：变量块、边界、缩放、pack/unpack
+│   ├── objective.py                          # 目标项接口及终点、平滑、侧滑、轮距、离地等目标
+├── geometry/                                 # Python 原型的几何与地形模型
+│   └── terrain.py                            # 简化 RBF 地形高度/梯度及 3D 可视化；非 C++ 多中心主线
+├── solver/                                   # Python NLP 接口及 CasADi-Ipopt 适配层
+│   ├── base.py                               # NLPProblem、Solver、SolveResult 协议与维度检查
+│   └── casadi_ipopt.py                       # 将 NumPy 目标/梯度/约束/Jacobian 包装成 CasADi callback
+├── utils/                                    # Python 通用辅助函数
+│   ├── utils.py                              # RBF JSON 读取和地形/轨迹绘图辅助
+├── test/                                     # 轻量测试脚本与离线 smoke-test 数据
+│   ├── casadi_test.py                        # 验证 CasADi 和 Ipopt
+│   ├── cupy_test.py                          # NumPy/CuPy RBF 单次性能实验，不属于主数据链
+│   └── terrain_res/                          # 当前 smoke fixture；被 .gitignore 忽略，需单独迁移
+│       ├── rbf.json                          # 830 个 RBF 中心与权重；C++ reader 固定 sigma=0.14
+│       ├── segmentation.txt                  # 512×512 网格元数据和 0/1 分区标签
+│       ├── segmentation.png                  # 分区图：绿色 rollable、红色 lift
+│       ├── segmentation_comparison.png       # RBF 高度与分区结果的对比图
+│       ├── terrain_segmentation_data.txt     # 网格元数据、高度数组和标签；RRT*/seg 优化器输入
+│       ├── rrt_star_path.txt                 # 16 个二维粗路径点，起点到终点
+│       ├── rrt_star_path.png                 # 粗路径叠加在分区图上的历史可视化
+│       └── waypoints_segmented.txt           # 粗路径点及标签；0=lift，1=rollable
+├── terrain_friction_segment/                 # CUDA 摩擦分区与 CPU region-aware RRT* 子工程
+│   ├── CMakeLists.txt                        # 构建 CUDA 分区程序和 rrt_star_region；默认架构 70/80/86
+│   ├── README.md                             # 子工程原理和旧运行说明；部分默认路径说明已过期
+│   ├── cuda/
+│   │   └── rbf_friction_kernel.cu            # GPU 计算 RBF 梯度/法向并按摩擦阈值输出 0/1 标签
+│   ├── external/
+│   │   └── stb_image_write.h                 # vendored PNG/JPG/BMP 写图单头文件
+│   ├── include/
+│   │   ├── json_reader.hpp                   # 分区侧 RBF JSONReader 声明
+│   │   ├── rbf_friction_cuda.hpp             # CUDA 包装、分区文件和图像输出接口
+│   │   └── rrt_star_region.hpp               # 分区数据视图、RRT* 参数和路径输出接口
+│   ├── src/
+│   │   ├── main.cpp                          # terrain_friction_segment 入口：读 RBF、调 CUDA、写分区
+│   │   ├── json_reader.cpp                   # 解析 cur_rbf_grid/rbf_weight，固定 sigma=0.14
+│   │   ├── rbf_friction_cuda.cpp             # CUDA 内存/拷贝/kernel 启动及分区图片/文本落盘
+│   │   ├── rrt_star_main.cpp                 # RRT* CLI 入口；waypoint/PNG 仍硬编码到 /home/yizhe
+│   │   └── rrt_star_region.cpp               # 区域加权边代价、桶索引、选择父节点、rewire 与导出
+│   ├── scripts/
+│   │   ├── visualize_segmentation.py         # 读取 segmentation.txt 绘制二值区域图
+│   │   ├── visualize_terrain_segmentation.py # 读取高度+标签，平滑并绘制地形/分区对比
+│   │   ├── rrt_star_region.py                # Python 版区域代价 RRT* 备用实现
+│   │   └── plot_rrt_path.py                  # 将已有粗路径叠加到分区数据上绘图
+│   ├── segmentation.txt                      # 历史分区标签产物，与 test fixture 内容相同
+│   ├── segmentation.png                      # 历史分区图片，不参与编译
+│   └── segmentation_comparison.png           # 历史地形/分区对比图片，不参与编译
+├── trajopt_cpp/                              # 独立通用 C++/Ipopt 全轨迹 NLP 与共享公共源码
+│   ├── CMakeLists.txt                        # 查找 Ipopt，编译 C++17 通用优化器并链接数学库
+│   ├── README.md                             # 子工程功能、运行和可视化说明
+│   ├── ARCHITECTURE.md                       # 该子工程的旧版类结构和数据流说明
+│   ├── BASIS_FUNCTIONS.md                    # 多项式/Chebyshev 基函数设计说明
+│   ├── CONSTRAINTS.md                        # 通用 NLP 约束项说明
+│   ├── INSTALL.md                            # 旧环境的 Ipopt/CMake 安装与编译说明
+│   ├── NORMALIZATION_REPORT.md               # 数值尺度与归一化分析记录
+│   ├── QUICK_START.md                        # 旧机器路径下的快速运行说明
+│   ├── REPORT.md                             # 通用优化器实现报告和历史结果说明
+│   ├── SUMMARY.md                            # 旧版实现摘要
+│   ├── quick_start.sh                        # 旧 build 目录的快速构建/运行辅助脚本
+│   ├── main.cpp                              # 通用优化器入口：初值、目标/约束注册、Ipopt 与可视化
+│   ├── visualize_terrain.py                  # 绘制 /tmp/rbf_terrain_data.txt 地形
+│   ├── visualize_trajectory.py               # 绘制 /tmp 轨迹、地形和离地状态
+│   ├── visualize_forces.py                   # 绘制接触力、平衡残差和摩擦相关曲线
+│   ├── include/
+│   │   ├── basis_function.hpp                # 基函数矩阵及一、二阶导数抽象接口
+│   │   ├── chebyshev_basis.hpp               # 第一类 Chebyshev 基函数接口
+│   │   ├── polynomial_basis.hpp              # 多项式基函数公共实现接口
+│   │   ├── polynomial.hpp                    # 全局基函数访问/轨迹求值包装
+│   │   ├── rbf_terrain.hpp                   # RBF 高度、解析梯度、法向和边界接口
+│   │   ├── json_reader.hpp                   # RBF JSON 读取接口
+│   │   ├── constraint_base.hpp               # 约束值、边界和稀疏 Jacobian 的统一接口
+│   │   ├── objective_base.hpp                # 标量目标及梯度累加接口
+│   │   ├── trajopt_nlp.hpp                   # 通用 Ipopt TNLP 聚合器与解提取接口
+│   │   ├── terrain_visualizer.hpp            # 地形临时数据和 Python 可视化接口
+│   │   ├── trajectory_visualizer.hpp         # 轨迹临时数据和 Python 可视化接口
+│   │   ├── force_data_saver.hpp              # 接触力临时数据导出接口
+│   │   ├── constraints/
+│   │   │   ├── boundary_constraint.hpp       # 基座/左右轮起终状态约束
+│   │   │   ├── trajectory_bounds_constraint.hpp # 所有采样点的地形平面边界约束
+│   │   │   ├── wheel_base_distance_constraint.hpp # 基座到左右轮距离区间约束
+│   │   │   ├── wheels_distance_constraint.hpp # 左右轮距离区间约束
+│   │   │   ├── anti_crossing_constraint.hpp  # 左右轮相对基座横向顺序约束
+│   │   │   ├── wheel_airborne_constraint.hpp # 轮地间隙/穿透区间约束
+│   │   │   └── normal_force_upper_bound_constraint.hpp # 地形法向力上界约束
+│   │   └── objectives/
+│   │       ├── smoothing_objective.hpp       # 轨迹采样值二阶差分平滑目标
+│   │       ├── regularization_objective.hpp  # Chebyshev 系数 L2 正则目标
+│   │       ├── wheel_base_distance_nominal_objective.hpp # 基座-轮名义距离目标
+│   │       ├── wheels_distance_nominal_objective.hpp # 左右轮名义轮距目标
+│   │       ├── wheel_terrain_distance_objective.hpp # 轮地高度差平方目标
+│   │       ├── wheel_airborne_penalty_objective.hpp # 超过离地阈值的软惩罚
+│   │       ├── path_length_objective.hpp      # 基座三维路径长度目标
+│   │       ├── forward_progress_objective.hpp # 沿起终方向前进、减少回退的目标
+│   │       ├── yaw_path_alignment_objective.hpp # yaw 与二维路径切向对齐目标
+│   │       ├── contact_stiffness_objective.hpp # 法向力与穿透弹簧模型匹配目标
+│   │       ├── force_balance_objective.hpp    # 准静态合力平衡软目标
+│   │       ├── torque_balance_objective.hpp   # 关于基座的合矩平衡软目标
+│   │       └── friction_cone_objective.hpp    # 摩擦锥及负法向力违反软惩罚
+│   └── src/
+│       ├── chebyshev_basis.cpp               # Chebyshev 基及端点稳定的一、二阶导实现
+│       ├── polynomial_basis.cpp              # PolynomialBasis 的基函数计算实现
+│       ├── polynomial.cpp                    # Polynomial 静态基对象和轨迹求值实现
+│       ├── rbf_terrain.cpp                   # Gaussian RBF 高度、梯度和向上法向实现
+│       ├── json_reader.cpp                   # 解析 RBF 数组并固定 sigma=0.14
+│       ├── trajopt_nlp.cpp                   # Ipopt 回调、变量/约束布局和最终解保存
+│       ├── terrain_visualizer.cpp            # 写 /tmp 地形文件并启动 Python 脚本
+│       ├── trajectory_visualizer.cpp         # 写 /tmp 轨迹文件并启动 Python 脚本
+│       ├── force_data_saver.cpp              # 写临时接触力数据、启动绘图后删除临时文件
+│       ├── constraints/
+│       │   ├── boundary_constraint.cpp       # 通用起终边界值与 Jacobian
+│       │   ├── trajectory_bounds_constraint.cpp # 平面位置边界值与 Jacobian
+│       │   ├── wheel_base_distance_constraint.cpp # 基座-轮距离值与 Jacobian
+│       │   ├── wheels_distance_constraint.cpp # 左右轮距离值与 Jacobian
+│       │   ├── anti_crossing_constraint.cpp  # 防交叉残差与 Jacobian
+│       │   ├── wheel_airborne_constraint.cpp # 轮地高度差约束与 Jacobian
+│       │   └── normal_force_upper_bound_constraint.cpp # 法向力上界值与 Jacobian
+│       └── objectives/
+│           ├── smoothing_objective.cpp       # 采样轨迹平滑代价及梯度
+│           ├── regularization_objective.cpp  # 系数正则代价及梯度
+│           ├── wheel_base_distance_nominal_objective.cpp # 基座-轮名义距离代价
+│           ├── wheels_distance_nominal_objective.cpp # 名义轮距代价
+│           ├── wheel_terrain_distance_objective.cpp # 轮地距离代价
+│           ├── wheel_airborne_penalty_objective.cpp # 离地软惩罚及解析梯度
+│           ├── path_length_objective.cpp      # 路径长度数值积分与梯度
+│           ├── forward_progress_objective.cpp # 前进方向软约束代价
+│           ├── yaw_path_alignment_objective.cpp # yaw/切向对齐代价；seg/lift 复用
+│           ├── contact_stiffness_objective.cpp # 穿透-法向力弹簧代价
+│           ├── force_balance_objective.cpp    # 合力残差平方代价
+│           ├── torque_balance_objective.cpp   # 合矩残差平方代价
+│           └── friction_cone_objective.cpp    # 摩擦锥违反代价
+├── seg_trajopt_cpp/                          # 第一段 rollable waypoint 的 C++/Ipopt 细化器
+│   ├── CMakeLists.txt                        # 编译本地 seg 源码并直接复用 ../trajopt_cpp 公共源码
+│   ├── README.md                             # 8 变量布局、初值、目标和约束说明
+│   ├── README.pdf                            # 子工程历史 PDF 说明，不保证与当前源码同步
+│   ├── main.cpp                              # 读取第一段标签 1、拟合初值、求解并输出轨迹
+│   ├── run_and_visualize.sh                  # 使用历史 build 目录运行 seg 并无窗口绘图的脚本
+│   ├── scripts/
+│   │   └── plot_seg_trajectory.py            # 绘制 initial/final 轨迹及相对 s 的运动学曲线
+│   ├── include/
+│   │   ├── seg_trajopt_nlp.hpp               # 8K 变量的 segment Ipopt TNLP 聚合器
+│   │   ├── waypoint_reader.hpp               # 第一段 rollable waypoint 读取接口
+│   │   ├── segmentation_reader.hpp           # 高度/标签网格读取和双线性插值接口
+│   │   ├── constraints/
+│   │   │   ├── boundary_constraint_8var.hpp  # 基座与左右轮平面端点约束
+│   │   │   ├── trajectory_bounds_constraint_8var.hpp # 基座/双轮 xy 范围约束
+│   │   │   ├── coefficient_norm_constraint.hpp # 全变量均方系数上界
+│   │   │   ├── rollable_region_constraint.hpp # 分区标签插值下界约束
+│   │   │   ├── wheel_base_distance_terrain_constraint.hpp # 含地形轮高的基座-轮距离
+│   │   │   └── wheels_distance_terrain_constraint.hpp # 含地形轮高的左右轮距离
+│   │   └── objectives/
+│   │       ├── base_height_stability_objective.hpp # 基座相对地形净空稳定目标
+│   │       └── initial_guess_proximity_objective.hpp # 优化系数靠近拟合初值的目标
+│   └── src/
+│       ├── seg_trajopt_nlp.cpp               # seg TNLP 的 Ipopt 回调、聚合和轨迹提取
+│       ├── waypoint_reader.cpp               # 扫描并返回第一段 label=1 的连续路径
+│       ├── segmentation_reader.cpp           # 解析三行分区格式并插值标签/高度
+│       ├── constraints/
+│       │   ├── boundary_constraint_8var.cpp  # 端点残差、容差及 Jacobian
+│       │   ├── trajectory_bounds_constraint_8var.cpp # xy 边界残差及 Jacobian
+│       │   ├── coefficient_norm_constraint.cpp # 系数均方约束及梯度
+│       │   ├── rollable_region_constraint.cpp # base/轮位置的分区插值约束
+│       │   ├── wheel_base_distance_terrain_constraint.cpp # 三维基座-轮距离约束
+│       │   └── wheels_distance_terrain_constraint.cpp # 三维左右轮距离约束
+│       └── objectives/
+│           ├── base_height_stability_objective.cpp # 基座高度稳定代价及梯度
+│           └── initial_guess_proximity_objective.cpp # 初值邻近代价及梯度
+└── lift_leg_trajopt_cpp/                     # 第一段 lift waypoint 的分段轮高轨迹优化器
+    ├── CMakeLists.txt                        # 编译 lift 主线并复用 ../trajopt_cpp 公共源码
+    ├── README.md                             # 子工程旧说明；N_COEFF/变量布局部分已落后于源码
+    ├── README.pdf                            # 子工程历史 PDF 说明，不保证与当前源码同步
+    ├── main.cpp                              # lift 入口：加密路径、接触掩码、初值拟合与 Ipopt
+    ├── scripts/
+    │   └── plot_seg_trajectory.py            # 可从轨迹/RBF 重建局部地形并无窗口绘图
+    ├── include/
+    │   ├── seg_trajopt_nlp.hpp               # 全局 xy/base + 分段 wheel-z 的 Ipopt TNLP
+    │   ├── waypoint_reader.hpp               # 第一段 lift/rollable waypoint 读取接口
+    │   ├── constraints/
+    │   │   ├── boundary_constraint_10var.hpp # 当前主线：base/轮 xyz 端点与地形约束
+    │   │   ├── trajectory_bounds_constraint_8var.hpp # base/轮 xy 地形边界约束
+    │   │   ├── coefficient_norm_constraint.hpp # 全系数均方上界约束
+    │   │   ├── wheel_base_distance_terrain_constraint.hpp # 分段轮高下的基座-轮距离
+    │   │   ├── wheels_distance_terrain_constraint.hpp # 分段轮高下的左右轮距离
+    │   │   ├── wheel_terrain_penetration_constraint.hpp # 最大轮地穿透约束
+    │   │   ├── penetration_based_force_constraint.hpp # 穿透刚度估算的 stance/swing 力区间
+    │   │   └── piecewise_z_continuity_constraint.hpp # 相邻 wheel-z 段的 C0 连续约束
+    │   └── objectives/
+    │       ├── base_height_stability_objective.hpp # 基座相对地形高度稳定目标
+    │       ├── initial_guess_proximity_objective.hpp # 优化系数靠近结构化初值
+    │       └── swing_wheel_lift_objective.hpp # 摆动轮抬升/支撑轮贴地参考目标
+    ├── src/
+    │   ├── seg_trajopt_nlp.cpp               # lift TNLP 回调、动态变量布局和轨迹提取
+    │   ├── waypoint_reader.cpp               # 返回第一段 label=0；入口无 lift 时回退 label=1
+    │   ├── constraints/
+    │   │   ├── boundary_constraint_10var.cpp # 当前 base/轮端点和轮高边界实现
+    │   │   ├── trajectory_bounds_constraint_8var.cpp # xy 范围约束实现
+    │   │   ├── coefficient_norm_constraint.cpp # 系数均方上界实现
+    │   │   ├── wheel_base_distance_terrain_constraint.cpp # 基座-轮距离及 Jacobian
+    │   │   ├── wheels_distance_terrain_constraint.cpp # 左右轮距离及 Jacobian
+    │   │   ├── wheel_terrain_penetration_constraint.cpp # 穿透上界及 Jacobian
+    │   │   ├── penetration_based_force_constraint.cpp # 平滑正部穿透力及接触掩码约束
+    │   │   └── piecewise_z_continuity_constraint.cpp # 分段 wheel-z 连接残差
+    │   └── objectives/
+    │       ├── base_height_stability_objective.cpp # 基座高度稳定代价及梯度
+    │       ├── initial_guess_proximity_objective.cpp # 初值邻近代价及梯度
+    │       └── swing_wheel_lift_objective.cpp # 摆动/支撑轮高度参考代价及梯度
+    ├── lift_leg_out_rerun/                   # 历史 lift 求解输出，生成环境与 commit 未记录
+    │   ├── initial_trajectory.txt            # Ipopt 初始轨迹采样
+    │   ├── final_trajectory.txt              # Ipopt 最终 iterate；文件存在不代表收敛
+    │   ├── seg_trajectory_plot.png           # 历史轨迹与地形图
+    │   └── seg_trajectory_kinematics.png     # 历史位置/速度/加速度曲线
+    ├── lift_leg_out_rerun2/                  # 历史第二次 lift 输出
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   └── final_trajectory.txt              # 最终 iterate
+    ├── lift_leg_out_rerun3/                  # 历史第三次 lift 输出
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   ├── final_trajectory.txt              # 最终 iterate
+    │   ├── seg_trajectory_plot.png           # 历史轨迹图
+    │   └── seg_trajectory_kinematics.png     # 历史运动学曲线
+    ├── lift_leg_out_rerun4/                  # 历史第四次 lift 输出
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   └── final_trajectory.txt              # 最终 iterate
+    ├── lift_leg_out_rerun5/                  # 历史第五次 lift 输出及稠密初值调试
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   ├── final_trajectory.txt              # 最终 iterate
+    │   ├── initial_dense_samples_debug.csv   # 初值加密采样调试数据；当前工作树为 CRLF
+    │   ├── initial_dense_samples_debug.png   # 初值加密采样调试图
+    │   ├── seg_trajectory_plot.png           # 历史轨迹图
+    │   └── seg_trajectory_kinematics.png     # 历史运动学曲线
+    ├── lift_leg_out_rerun6/                  # 历史第六次 lift 输出及初值调试
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   ├── final_trajectory.txt              # 最终 iterate
+    │   ├── initial_dense_samples_debug.csv   # 初值加密采样调试数据；当前工作树为 CRLF
+    │   └── initial_dense_samples_debug.png   # 初值加密采样调试图
+    ├── lift_leg_out_rerun7/                  # 历史第七次 lift 输出及 Chebyshev 拟合调试
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   ├── final_trajectory.txt              # 最终 iterate
+    │   ├── initial_dense_samples_debug.csv   # 初值加密采样调试数据；当前工作树为 CRLF
+    │   ├── initial_dense_samples_debug.png   # 初值加密采样调试图
+    │   └── chebyshev_fit_wheel_z.png         # 分段轮高 Chebyshev 拟合诊断图
+    ├── lift_leg_out_rerun8/                  # 历史第八次 lift 输出
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   ├── final_trajectory.txt              # 最终 iterate
+    │   ├── seg_trajectory_plot.png           # 历史轨迹图
+    │   └── seg_trajectory_kinematics.png     # 历史运动学曲线
+    ├── lift_leg_out_rerun9/                  # 历史第九次 lift 输出
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   ├── final_trajectory.txt              # 最终 iterate
+    │   ├── seg_trajectory_plot.png           # 历史轨迹图
+    │   └── seg_trajectory_kinematics.png     # 历史运动学曲线
+    ├── lift_leg_out_smoke/                   # 历史 lift smoke 输出，不能替代当前版本验证
+    │   ├── initial_trajectory.txt            # 初始轨迹采样
+    │   ├── final_trajectory.txt              # 最终 iterate
+    │   ├── seg_trajectory_plot.png           # 历史 smoke 轨迹图
+    │   └── seg_trajectory_kinematics.png     # 历史 smoke 运动学曲线
+    ├── lift_leg_out_stair_init/              # 历史台阶初值版本输出
+    │   ├── initial_trajectory.txt            # 台阶结构化初始轨迹
+    │   ├── final_trajectory.txt              # 最终 iterate
+    │   ├── seg_trajectory_plot.png           # 历史台阶轨迹图
+    │   └── seg_trajectory_kinematics.png     # 历史台阶运动学曲线
+    └── lift_leg_out_test/                    # 历史 lift 测试输出
+        ├── initial_trajectory.txt            # 初始轨迹采样
+        ├── final_trajectory.txt              # 最终 iterate
+        └── terrain_grid.txt                  # 历史绘图地形网格

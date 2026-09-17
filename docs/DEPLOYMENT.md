@@ -49,7 +49,6 @@ RBF-LIO / terrain estimator
 | CuPy | Optional test-only | `test/cupy_test.py` | must match installed CUDA; not required for C++ CUDA kernel |
 | `pkg-config` | Build helper | Ipopt fallback discovery | required if `find_package(Ipopt)` fails |
 | `stb_image_write.h` | Vendored | segmentation/RRT PNG output | already in repository |
-| `matplotlibcpp.h` | Vendored | full optimizer support code | already in repository |
 
 仓库没有依赖锁文件、Dockerfile、Conda environment 或统一安装脚本。版本兼容性必须在部署记录中显式保存。
 
@@ -523,4 +522,3 @@ Low-Level Controller
 - [ ] 完成 simulation/HIL 验证、受控场地测试和正式安全评审。
 
 只有第二组也通过后，才能把轨迹标为“ready for robot integration”；这不等于已经达到生产级实机安全认证。
-

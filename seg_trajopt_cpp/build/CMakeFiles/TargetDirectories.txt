@@ -1,3 +1,0 @@
-/home/yizhe/trajopt/seg_trajopt_cpp/build/CMakeFiles/seg_trajopt_cpp.dir
-/home/yizhe/trajopt/seg_trajopt_cpp/build/CMakeFiles/edit_cache.dir
-/home/yizhe/trajopt/seg_trajopt_cpp/build/CMakeFiles/rebuild_cache.dir

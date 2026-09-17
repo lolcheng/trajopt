@@ -1,4 +1,0 @@
-/home/yizhe/trajopt/terrain_friction_segment/build/CMakeFiles/terrain_friction_segment.dir
-/home/yizhe/trajopt/terrain_friction_segment/build/CMakeFiles/rrt_star_region.dir
-/home/yizhe/trajopt/terrain_friction_segment/build/CMakeFiles/edit_cache.dir
-/home/yizhe/trajopt/terrain_friction_segment/build/CMakeFiles/rebuild_cache.dir

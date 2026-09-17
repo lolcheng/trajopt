@@ -1,3 +1,0 @@
-/home/lolcheng/trajopt/build/trajopt_cpp/CMakeFiles/trajopt_cpp.dir
-/home/lolcheng/trajopt/build/trajopt_cpp/CMakeFiles/edit_cache.dir
-/home/lolcheng/trajopt/build/trajopt_cpp/CMakeFiles/rebuild_cache.dir
